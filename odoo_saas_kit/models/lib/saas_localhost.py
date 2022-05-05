@@ -380,7 +380,7 @@ def main(context=None):
     _logger.info("db_template %r", db_template)
     _logger.info("DB  %r", db)
     _logger.info("OdooObject.container_master  %r", OdooObject.container_master)
-    result = OdooObject.cloning_db("{}:{}".format("http://localhost", port['port']),db_template,db,OdooObject.template_master)
+    result = OdooObject.cloning_db("{}:{}".format("http://localhost", port['port']),db_template,db,OdooObject.container_master)
     time.sleep(1)
 
     _logger.info("Cloning Res %r"%result)
