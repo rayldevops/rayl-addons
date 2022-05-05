@@ -81,6 +81,7 @@ class SaasClient(models.Model):
         response = None
         self.database_name = domain_name.replace("https://", "").replace("http://", "")
         config_path = get_module_resource('odoo_saas_kit')
+        _logger.info("Came here create_docker_instance : .................. %s", self.database_name)
         response = saas.main(dict(
             db_template = self.saas_contract_id.db_template,
             db_name=self.database_name,
@@ -109,6 +110,7 @@ class SaasClient(models.Model):
 
             response = None
             try:
+                _logger.info("Came here  : .................. %s", domain_name)
                 response = obj.create_client_instance(domain_name)
             except Exception as e:
                 raise UserError("Unable To Create Client\nERROR: {}".format(e))
