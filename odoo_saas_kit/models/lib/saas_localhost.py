@@ -267,7 +267,7 @@ class odoo_container:
 
     def cloning_db(self,url,source_db,new_db,admin_passwd):
         sock_db = xmlrpc.client.ServerProxy('{}/xmlrpc/2/db'.format(url))
-        _logger.info("sock_db DB: %r" % sock_db)
+        _logger.info("admin_passwd DB: %r" % admin_passwd)
         count = 0
         while count < 10:
             try:
