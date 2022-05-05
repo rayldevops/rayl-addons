@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_rayl_community" model="ir.ui.view">
+            <field name="name">res.config.settings.form.inherited.rayl.community</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[hasclass('settings')]" position="inside">
+                    <div class="app_settings_block" data-string="Rayl Community Setting"
+                         string="Rayl Community Setting" data-key="rayl_community"
+                         web_icon="rayl_community,static/description/icon.png">
+                        <h2>Rayl Community Settings</h2>
+                        <div class="row mt16 o_settings_container" id="website_selection_settings"
+                             title="Configure Rayl Community Credentials">
+                            <group>
+                                <field name="rayl_community_user_exists_url" placeholder="Rayl Community User Exists Url"/>
+                                <field name="rayl_community_user_update_url" placeholder="Rayl Community User Update Url"/>
+                                <field name="rayl_community_admin_username" placeholder="Rayl Community Admin Username"/>
+                                <field name="rayl_community_admin_password" placeholder="Rayl Community Admin Password"/>
+                            </group>
+                        </div>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+    </data>
+
+</odoo>
