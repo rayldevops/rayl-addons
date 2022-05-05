@@ -213,6 +213,7 @@ class odoo_container:
         self.response['name'] = name
         try:
             port = self.find_me_an_available_port_within(8000,9000)#find_me_an_available_port()  # Grepping an avialable port.
+            _logger.info("Final Port %s ",port)
             if port == False:
                 return False
 
@@ -350,6 +351,7 @@ def main(context=None):
         raise Exception("Host Name should match the DB Name") 
 
     port = OdooObject.run_odoo(host_domain, db)
+    _logger.info("PORT %r", port)
     if not port:
         status_checks['server'] = False
         raise Exception("No Available Port")
