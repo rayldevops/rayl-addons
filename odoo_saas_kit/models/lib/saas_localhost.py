@@ -349,14 +349,15 @@ def main(context=None):
 
     sitesEnable = OdooObject.odoo_config+"/docker_vhosts/"
     if host_domain != db:
-        raise Exception("Host Name should match the DB Name") 
+        raise Exception("Host Name should match the DB Name")
 
     port = OdooObject.run_odoo(host_domain, db)
+    _logger.info("context %r", context)
     _logger.info("PORT %r", port)
     if not port:
         status_checks['server'] = False
         raise Exception("No Available Port")
-     
+
     try:
         src = "%s/%s/data-dir/filestore/%s"%(OdooObject.odoo_config,OdooObject.odoo_template,db_template)
         dest = "%s/%s/data-dir/filestore"%(OdooObject.odoo_config,host_domain)
@@ -364,8 +365,8 @@ def main(context=None):
         try:
             os.makedirs(dest,exist_ok=True)
         except OSError as e:
-           status_checks['dir'] = False
-           _logger.info("Could not create filestore %r",e)
+            status_checks['dir'] = False
+            _logger.info("Could not create filestore %r",e)
 
         dest = dest+"/"+db
         _logger.info("SOURCE %r",src)
