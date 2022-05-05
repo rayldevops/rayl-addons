@@ -100,10 +100,13 @@ class odoo_container:
                  continue
              _logger.info("Port %r seems available",port)
              with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+
                  res = sock.connect_ex(('localhost', port))
+                 _logger.info("Port %r seems available with %s", port,res)
                  if res != 0:
                      self.response['port'] =  port
                      self.ports_in_use.add(str(port))
+                     _logger.info("Port %r seems available vvv with %s", port, res)
                      return port
         _logger.info("All the ports are being used. Try removing unused or obselete containers")
         return False
