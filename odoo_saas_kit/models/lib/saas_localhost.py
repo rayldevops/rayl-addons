@@ -268,7 +268,7 @@ class odoo_container:
 
     def cloning_db(self,url,source_db,new_db,admin_passwd):
         # url = "https://db14_templates.rayl.app"
-        url = "http://localhost:8004"
+        url = "http://localhost:8026"
         # admin_passwd = 'caLNG+EicPloKTaily'
         admin_passwd = 'caLNG+EicPloKTaily'
         sock_db = xmlrpc.client.ServerProxy('{}/xmlrpc/2/db'.format(url))
