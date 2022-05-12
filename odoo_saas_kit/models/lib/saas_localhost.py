@@ -270,7 +270,8 @@ class odoo_container:
         # url = "https://db14_templates.rayl.app"
         url = "http://localhost:8026"
         # admin_passwd = 'caLNG+EicPloKTaily'
-        admin_passwd = 'caLNG+EicPloKTaily'
+        # admin_passwd = 'caLNG+EicPloKTaily'
+        admin_passwd = 'CnvvV46UGZb2=Nlabs'
         sock_db = xmlrpc.client.ServerProxy('{}/xmlrpc/2/db'.format(url))
         _logger.info("sock_db: %r" % sock_db)
         _logger.info("admin_passwd DB: %r" % admin_passwd)
