@@ -230,7 +230,7 @@ class odoo_container:
             self.add_config_paramenter(self.odoo_config+"/"+name+"/odoo-server.conf","db_password = %s"%self.db_password) 
             self.add_config_paramenter(self.odoo_config+"/"+name+"/odoo-server.conf","odoo_image = %s"%self.odoo_image)
             extra_path = self.mkdir_mnt_extra_addons(name)
-            self.dclient.containers.run(image=self.odoo_image,entrypoint='/opt/odoo_saas_kit_v14/docker-data/entrypoint.sh',name=name,detach=True,volumes={extra_path:{'bind':self.data_dir,"mode":"rw"}, path: {'bind': "/etc/odoo/", 'mode': 'rw'},self.common_addons:{'bind': "/mnt/extra-addons", 'mode': 'rw'}},ports={8069:port, 8071:lport},tty=True,restart_policy={"Name":"unless-stopped"}) #Start the container
+            self.dclient.containers.run(image=self.odoo_image,name=name,detach=True,volumes={extra_path:{'bind':self.data_dir,"mode":"rw"}, path: {'bind': "/etc/odoo/", 'mode': 'rw'},self.common_addons:{'bind': "/mnt/extra-addons", 'mode': 'rw'}},ports={8069:port, 8071:lport},tty=True,restart_policy={"Name":"unless-stopped"}) #Start the container
             _logger.info("Let's give Odoo 2s")
             time.sleep(2)
             self.response['container_id'] = self.response['name']
