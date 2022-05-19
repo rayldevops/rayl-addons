@@ -14,8 +14,7 @@ from dateutil.relativedelta import relativedelta
 from werkzeug.urls import url_encode
 from odoo.exceptions import UserError, Warning, ValidationError
 from odoo.addons.auth_signup.models.res_partner import random_token as generate_token
-from . lib import query
-
+from .lib import query
 
 _logger = logging.getLogger(__name__)
 
@@ -24,8 +23,8 @@ CONTRACT_STATE = [
     ('open', "Open"),
     ('confirm', "Confirmed"),
     ('hold', 'On Hold'),
-    ('expired',"Expired"),
-    ('cancel', "Cancelled"),]
+    ('expired', "Expired"),
+    ('cancel', "Cancelled"), ]
 
 
 def random_token():
@@ -41,7 +40,8 @@ class SaasContract(models.Model):
     @api.depends('db_template')
     def _compute_saas_domain_url(self):
         for obj in self:
-            obj.saas_domain_url = obj.server_id.server_domain if (obj.server_id or not obj.is_multi_server) else 'to_be_fetch'
+            obj.saas_domain_url = obj.server_id.server_domain if (
+                        obj.server_id or not obj.is_multi_server) else 'to_be_fetch'
 
     name = fields.Char(string='Contract Name')
 
@@ -92,10 +92,12 @@ class SaasContract(models.Model):
         required=True
     )
     invoice_ids = fields.One2many(comodel_name="account.move", inverse_name="contract_id")
-    on_create_email_template = fields.Many2one('mail.template', default=lambda self: self.env.ref('odoo_saas_kit.client_credentials_template'), string="Client Creation Email Template")
+    on_create_email_template = fields.Many2one('mail.template', default=lambda self: self.env.ref(
+        'odoo_saas_kit.client_credentials_template'), string="Client Creation Email Template")
     auto_create_invoice = fields.Boolean(string="Automatically create next invoice")
     saas_client = fields.Many2one(comodel_name="saas.client", string="SaaS Client")
-    saas_module_ids = fields.Many2many(comodel_name="saas.module", relation="saas_contract_module_relation", column1="contract_id", column2="module_id", string="Related Modules")
+    saas_module_ids = fields.Many2many(comodel_name="saas.module", relation="saas_contract_module_relation",
+                                       column1="contract_id", column2="module_id", string="Related Modules")
     state = fields.Selection(selection=CONTRACT_STATE, default="draft", string="State")
     total_cycles = fields.Integer(string="Billing Cycles (Remaining/Total)", default=1)
     remaining_cycles = fields.Integer(string="Remaining Cycles", default=1)
@@ -103,7 +105,8 @@ class SaasContract(models.Model):
     next_invoice_date = fields.Date(string="Next invoice date")
     server_id = fields.Many2one(comodel_name="saas.server", string="SaaS Server")
     is_multi_server = fields.Boolean(string="Deploy Client's on Remote Server", default=False)
-    sale_order_id = fields.Many2one(comodel_name="sale.order", related="sale_order_line_id.order_id", string="Related Sale Order")
+    sale_order_id = fields.Many2one(comodel_name="sale.order", related="sale_order_line_id.order_id",
+                                    string="Related Sale Order")
     sale_order_line_id = fields.Many2one(comodel_name="sale.order.line", string="Related Sale Order Line")
     under_process = fields.Boolean(string="Client Creation Under Process", default=False)
     token = fields.Char(string="Token")
@@ -127,7 +130,8 @@ class SaasContract(models.Model):
     from_backend = fields.Boolean(string="Is from Backend", default=False)
     user_billing = fields.Float(string="User Billing")
     total_cost = fields.Float(string="Total Contract Cost")
-    user_billing_history_ids = fields.One2many(comodel_name="user.billing.history", inverse_name='contract_id', string="User Billing History")
+    user_billing_history_ids = fields.One2many(comodel_name="user.billing.history", inverse_name='contract_id',
+                                               string="User Billing History")
     due_users_price = fields.Float(string="Due users price", default=1.0)
     previous_cycle_user = fields.Integer(string="Previous User")
     client_state = fields.Selection(string="Client State", related='saas_client.state')
@@ -162,13 +166,13 @@ class SaasContract(models.Model):
             obj.is_contract_expiry_mail = 2
             obj.message_post(body="Contaract is expired and Expiry mail is sent to the Customer", subject="Expired")
 
-
     @api.model
     def check_contract_expiry(self):
-        contracts = self.search([('state', 'in', ['confirm', 'hold']), ('remaining_cycles', '=', 0), ('next_invoice_date', '<=', fields.Date.today()), ('domain_name', '!=', False)])
+        contracts = self.search([('state', 'in', ['confirm', 'hold']), ('remaining_cycles', '=', 0),
+                                 ('next_invoice_date', '<=', fields.Date.today()), ('domain_name', '!=', False)])
         _logger.info("-------   Contract Expiry Cron ------")
         for contract in contracts:
-            _logger.info("----------records  %r    "%contract.id)
+            _logger.info("----------records  %r    " % contract.id)
             contract.is_contract_expiry_mail = 1
             contract.send_expiry_mail()
             database = contract.saas_client and contract.saas_client.database_name or False
@@ -181,15 +185,14 @@ class SaasContract(models.Model):
             contract.write({'state': 'expired'})
             contract._cr.commit()
 
-
-
     @api.model
     def client_creation_cron_action(self):
         IrDefault = self.env['ir.default'].sudo()
 
         auto_create_client = IrDefault.get('res.config.settings', 'auto_create_client')
         if auto_create_client:
-            contracts = self.search([('state', 'in', ['draft', 'open']), ('sale_order_id', '!=', False), ('domain_name', '!=', False)])
+            contracts = self.search(
+                [('state', 'in', ['draft', 'open']), ('sale_order_id', '!=', False), ('domain_name', '!=', False)])
             _logger.info("------CRON-ACTION-RECORDS------%r", contracts)
             k = []
             for contract in contracts:
@@ -215,7 +218,7 @@ class SaasContract(models.Model):
                 obj.state = "cancel"
             else:
                 if obj.saas_client and obj.saas_client.state == 'cancel':
-                    obj.state = "cancel"              
+                    obj.state = "cancel"
                 else:
                     raise UserError("Please Cancel the Linked client first before cancel the Contract.")
 
@@ -251,12 +254,12 @@ class SaasContract(models.Model):
                     obj.update_billing_history(first=True)
                     obj.previous_cycle_user = max(obj.min_users, obj.saas_users)
             except Exception as e:
-                raise UserError("Unable To Write User Data %r"%e)
+                raise UserError("Unable To Write User Data %r" % e)
             obj.sudo().set_user_data(token=token)
             obj._cr.commit()
-            reset_pwd_url = "{}/web/signup?token={}&db={}".format(obj.saas_client.client_url, token, obj.saas_client.database_name)
+            reset_pwd_url = "{}/web/signup?token={}&db={}".format(obj.saas_client.client_url, token,
+                                                                  obj.saas_client.database_name)
             obj.saas_client.invitation_url = reset_pwd_url
-            
 
     def send_invitation_email(self):
         for obj in self:
@@ -279,7 +282,6 @@ class SaasContract(models.Model):
                 obj.write({'state': 'confirm'})
                 self._cr.commit()
 
-
     def set_user_data(self, token=False):
         for obj in self:
             data = dict()
@@ -291,22 +293,22 @@ class SaasContract(models.Model):
             data['database'] = obj.saas_client and obj.saas_client.database_name or False
             data['user_id'] = obj.plan_id.template_user_id and int(obj.plan_id.template_user_id)
             data['user_data'] = dict(
-                name = user_id and user_id.name or partner_id.name or '',
-                login = user_id and user_id.login or partner_id.email or '',
+                name=user_id and user_id.name or partner_id.name or '',
+                login=user_id and user_id.login or partner_id.email or '',
             )
 
             data['partner_data'] = dict(
-                name = partner_id.name or '',
-                street = partner_id.street or '',
-                street2 = partner_id.street2 or '',
-                city = partner_id.city or '',
-                state_id = partner_id.state_id and partner_id.state_id.id or False,
-                zip = partner_id.zip or '',
-                country_id = partner_id.country_id and partner_id.country_id.id or False,
-                phone = partner_id.phone or '',
-                mobile = partner_id.mobile or '',
-                email = partner_id.email or '',
-                website = partner_id.website or '',
+                name=partner_id.name or '',
+                street=partner_id.street or '',
+                street2=partner_id.street2 or '',
+                city=partner_id.city or '',
+                state_id=partner_id.state_id and partner_id.state_id.id or False,
+                zip=partner_id.zip or '',
+                country_id=partner_id.country_id and partner_id.country_id.id or False,
+                phone=partner_id.phone or '',
+                mobile=partner_id.mobile or '',
+                email=partner_id.email or '',
+                website=partner_id.website or '',
                 signup_token=token or '',
                 signup_type="signup",
             )
@@ -338,7 +340,7 @@ class SaasContract(models.Model):
                     response = None
                     response = query.set_user_limt(vals, db_server=db_server, is_count=True)
                 except Exception as e:
-                    _logger.info("-------Exception while updation limit %r -------"%e)    
+                    _logger.info("-------Exception while updation limit %r -------" % e)
                 if response:
                     obj.saas_client.restart_client()
                     _logger.info("---------   Updated User limits --------")
@@ -354,7 +356,6 @@ class SaasContract(models.Model):
             current_mail.send()
             obj.subdomain_email_sent = True
 
-
     def get_subdomain_url(self):
         self.ensure_one()
         params = {
@@ -363,7 +364,6 @@ class SaasContract(models.Model):
             'partner_id': self.partner_id.id
         }
         return '/mail/contract/subdomain?' + url_encode(params)
-                                
 
     # Used to confirm the contracts that are in Draft state but has a Client record associated with it. It created the client instance if already not created for a contract and then send the invitation email.
     def mark_confirmed(self):
@@ -385,7 +385,7 @@ class SaasContract(models.Model):
                     self._cr.commit()
 
                 if obj.is_multi_server:
-                    server_id = obj.plan_id.select_server()    # To select the server from multi server
+                    server_id = obj.plan_id.select_server()  # To select the server from multi server
                     if not server_id[0]:
                         obj.under_process = False
                         self._cr.commit()
@@ -402,7 +402,7 @@ class SaasContract(models.Model):
                         obj.under_process = False
                         self._cr.commit()
                         raise UserError("Maximum Clients limit reached!")
-                
+
                 contracts = self.sudo().search([('domain_name', '=ilike', obj.domain_name), ('state', '!=', 'cancel')])
                 if len(contracts) > 1:
                     _logger.info("---------ALREADY TAKEN--------%r", contracts)
@@ -415,7 +415,7 @@ class SaasContract(models.Model):
                 self._cr.commit()
 
                 if not obj.use_separate_domain:
-                    domain_name = domain_name+'{}'.format(obj.saas_domain_url)
+                    domain_name = domain_name + '{}'.format(obj.saas_domain_url)
 
                 client_count = self.env['saas.client'].sudo().search_count([('server_id', '=', obj.server_id.id),
                                                                             ('state', '=', 'started')])
@@ -424,9 +424,9 @@ class SaasContract(models.Model):
                     self._cr.commit()
                     raise UserError("Maximum Clients limit reached!")
                 vals = dict(
-                    saas_contract_id = obj.id,
-                    partner_id = obj.partner_id and obj.partner_id.id or False,
-                    server_id = obj.server_id.id,
+                    saas_contract_id=obj.id,
+                    partner_id=obj.partner_id and obj.partner_id.id or False,
+                    server_id=obj.server_id.id,
                     # admin_username = obj.plan_id.db_template_username or False,
                     # admin_password = obj.plan_id.db_template_password or False,
                 )
@@ -470,19 +470,19 @@ class SaasContract(models.Model):
             Run For the first time when client is created
             """
             billing_history = self.env['user.billing.history'].create({
-            'name': 'Data'+str(self.id),
-            'date': fields.Date.today(),
-            'cycle_number': 'Purchase',
-            'due_users': 0,
-            'puchased_users': self.saas_users,
-            'due_users_price': self.due_users_price or 1.0,
-            'puchase_users_price': self.user_cost,
-            'final_price': self.saas_users * self.user_cost,
-            'contract_id': self.id,
-            'is_invoiced': False,
-        })
+                'name': 'Data' + str(self.id),
+                'date': fields.Date.today(),
+                'cycle_number': 'Purchase',
+                'due_users': 0,
+                'puchased_users': self.saas_users,
+                'due_users_price': self.due_users_price or 1.0,
+                'puchase_users_price': self.user_cost,
+                'final_price': self.saas_users * self.user_cost,
+                'contract_id': self.id,
+                'is_invoiced': False,
+            })
             if billing_history:
-                _logger.info("-----------Billing History Created ----------%r"%billing_history)
+                _logger.info("-----------Billing History Created ----------%r" % billing_history)
             else:
                 _logger.info("-----------Exception while creating billing History---------- ")
         else:
@@ -498,7 +498,7 @@ class SaasContract(models.Model):
                 arrear_price = 0
 
             obj_history = self.env['user.billing.history'].create({
-                'name': 'Data'+str(fields.Date.today()),
+                'name': 'Data' + str(fields.Date.today()),
                 'date': fields.Date.today(),
                 'cycle_number': fields.Date.today().strftime("%B%Y"),
                 'due_users': due_users,
@@ -506,23 +506,26 @@ class SaasContract(models.Model):
                 'due_users_price': self.due_users_price or 1.0,
                 'puchase_users_price': self.user_cost,
                 'contract_id': self.id,
-                'final_price': (puchased_users*self.user_cost) + arrear_price,
+                'final_price': (puchased_users * self.user_cost) + arrear_price,
                 'is_invoiced': True,
             })
             if obj_history:
-                _logger.info("-----------Billing History Updated ----------%r"%obj_history)
-                cost = (obj_history.puchased_users * obj_history.puchase_users_price) + (obj_history.due_users * obj_history.due_users_price)
+                _logger.info("-----------Billing History Updated ----------%r" % obj_history)
+                cost = (obj_history.puchased_users * obj_history.puchase_users_price) + (
+                            obj_history.due_users * obj_history.due_users_price)
                 new_users = obj_history.puchased_users + obj_history.due_users
                 return {
                     'total_cost': cost,
-                    'new_users' : new_users,
+                    'new_users': new_users,
                 }
             else:
-                 _logger.info("-----------Exception while updating billing History---------- ")
+                _logger.info("-----------Exception while updating billing History---------- ")
 
     # Used to create the clients and share credentials for the contracts.
     def create_saas_client(self):
+        _logger.info("-----------Start of the client---------- ")
         for obj in self:
+            _logger.info("-----------Start of the obj---------- ")
             if not obj.domain_name:
                 raise UserError("Please select a domain first!")
             if obj.under_process:
@@ -530,14 +533,16 @@ class SaasContract(models.Model):
             else:
                 domain_name = None
                 if obj.use_separate_domain:
+                    _logger.info("-----------Start of the separate domain---------- ")
                     domain_name = obj.domain_name
                 else:
-                    domain_name = "{}.".format(obj.domain_name)   # is edited
+                    domain_name = "{}.".format(obj.domain_name)  # is edited
 
                 obj.under_process = True
                 self._cr.commit()
                 if obj.is_multi_server:
-                    server_id = obj.plan_id.select_server()    # To select the server from multi server
+                    _logger.info("-----------Start of the is multi server---------- ")
+                    server_id = obj.plan_id.select_server()  # To select the server from multi server
                     if not server_id[0]:
                         obj.under_process = False
                         self._cr.commit()
@@ -567,7 +572,7 @@ class SaasContract(models.Model):
                 self._cr.commit()
 
                 if not obj.use_separate_domain:
-                    domain_name = domain_name+'{}'.format(obj.saas_domain_url)
+                    domain_name = domain_name + '{}'.format(obj.saas_domain_url)
                 client_count = self.env['saas.client'].sudo().search_count([('server_id', '=', obj.server_id.id),
                                                                             ('state', '=', 'started')])
                 if obj.server_id.max_clients <= client_count:
@@ -576,15 +581,16 @@ class SaasContract(models.Model):
                     raise UserError("Maximum Clients limit reached!")
 
                 vals = dict(
-                    saas_contract_id = obj.id,
-                    partner_id = obj.partner_id and obj.partner_id.id or False,
-                    server_id = obj.server_id.id,
+                    saas_contract_id=obj.id,
+                    partner_id=obj.partner_id and obj.partner_id.id or False,
+                    server_id=obj.server_id.id,
                 )
                 client_id = self.env['saas.client'].create(vals)
                 obj.attach_modules(client_id)
                 obj.write({'saas_client': client_id.id})
                 self._cr.commit()
                 try:
+                    _logger.info("-----------Fetch Client Url ---------- ")
                     client_id.fetch_client_url(domain_name)
                     _logger.info("--------Client--Created-------%r", client_id)
                 except Exception as e:
@@ -605,23 +611,26 @@ class SaasContract(models.Model):
                         except Exception as e:
                             _logger.info("--------EXCEPTION-WHILE-UPDATING-DATA-AND-SENDING-INVITE-------%r----", e)
                         else:
-                            reset_pwd_url = "{}/web/signup?token={}&db={}".format(client_id.client_url, token, client_id.database_name)
+                            reset_pwd_url = "{}/web/signup?token={}&db={}".format(client_id.client_url, token,
+                                                                                  client_id.database_name)
                             client_id.invitation_url = reset_pwd_url
-                            template = obj.on_create_email_template
-                            mail_id = template.send_mail(client_id.id)
-                            current_mail = self.env['mail.mail'].browse(mail_id)
-                            res = current_mail.send()
+                            # template = obj.on_create_email_template
+                            template_id = self.env.ref('odoo_saas_kit.client_credentials_template')
+                            mail_id = template_id.send_mail(client_id.id)
+                            # current_mail = self.env['mail.mail'].browse(mail_id)
+                            # res = current_mail.send(raise_exception=False)
                             obj.write({'state': 'confirm'})
                             self._cr.commit()
                             try:
+                                _logger.info("-----------From Backend ---------- ")
                                 if obj.from_backend:
                                     obj.generate_invoice(first_invoice=True)
                                 elif obj.per_user_pricing:
                                     obj.update_billing_history(first=True)
                                     obj.previous_cycle_user = max(obj.min_users, obj.saas_users)
                             except Exception as e:
-                                _logger.info("----------------  Exception While creating invoice-----------------")                            
-                            return res
+                                _logger.info("----------------  Exception While creating invoice-----------------")
+                            return mail_id
 
     def extend_contract(self):
         for obj in self:
@@ -633,7 +642,8 @@ class SaasContract(models.Model):
         text = ''
         for item in arrer_response:
             total_price += (item[2] or 1) * self.due_users_price
-            text += 'Name :'+item[0]+' Created in: '+item[1].strftime("%B%Y")+' Billed Months: '+str(item[2] or 1)+', \n'
+            text += 'Name :' + item[0] + ' Created in: ' + item[1].strftime("%B%Y") + ' Billed Months: ' + str(
+                item[2] or 1) + ', \n'
         return {
             'arrear_users': len(arrer_response),
             'total_price': total_price,
@@ -647,25 +657,26 @@ class SaasContract(models.Model):
         template = self.env.ref('account.email_template_edi_invoice')
         subjects = self.env['mail.template']._render_template(template.subject, 'account.move', [invoice.id])
         body = template._render_template(template.body_html, 'account.move', [invoice.id])
-        emails_from = self.env['mail.template']._render_template(template.email_from,'account.move', [invoice.id])
+        emails_from = self.env['mail.template']._render_template(template.email_from, 'account.move', [invoice.id])
         mail_compose_obj = self.env['mail.compose.message'].create({
-        'subject':subjects,
-        'body':body,
-        'parent_id':False,
-        'email_from':emails_from,
-        'model':'account.move',
-        'res_id':invoice.id,
-        'record_name':invoice.name,
-        'message_type':'comment',
-        'composition_mode':'comment',
-        'partner_ids':[invoice.partner_id.id],
-        'auto_delete':False,
-        'template_id':template.id,
-        'add_sign':True,
-        'subtype_id':1,
-        'author_id':self.env.user.partner_id.id,
+            'subject': subjects,
+            'body': body,
+            'parent_id': False,
+            'email_from': emails_from,
+            'model': 'account.move',
+            'res_id': invoice.id,
+            'record_name': invoice.name,
+            'message_type': 'comment',
+            'composition_mode': 'comment',
+            'partner_ids': [invoice.partner_id.id],
+            'auto_delete': False,
+            'template_id': template.id,
+            'add_sign': True,
+            'subtype_id': 1,
+            'author_id': self.env.user.partner_id.id,
         })
-        mail_compose_obj.with_context(custom_layout="mail.mail_notification_paynow",model_description='invoice').send_mail()
+        mail_compose_obj.with_context(custom_layout="mail.mail_notification_paynow",
+                                      model_description='invoice').send_mail()
         self.mapped('invoice_ids').write({'is_move_sent': True})
 
     # Used to create the next invoice for the contract
@@ -687,16 +698,16 @@ class SaasContract(models.Model):
                                 arrer_response = query.get_arrear_users(
                                     obj.saas_client.database_name,
                                     db_server=db_server,
-                                    limit = user_count - obj.previous_cycle_user,
+                                    limit=user_count - obj.previous_cycle_user,
                                 )
                                 if not arrer_response:
                                     raise UserError("Couldn't fetch arrer users! Please try again.")
                                 data = obj.calculate_arrear_price(arrer_response)
 
                     if not user_count:
-                        raise UserError("Couldn't fetch user count! Please try again later.")                    
+                        raise UserError("Couldn't fetch user count! Please try again later.")
                 try:
-                    price = None                    
+                    price = None
                     if first_invoice == True:
                         if obj.per_user_pricing:
                             obj.update_billing_history(first=True)
@@ -704,7 +715,8 @@ class SaasContract(models.Model):
                         price = obj.total_cost
                     else:
                         if obj.per_user_pricing:
-                            res = obj.update_billing_history(arrear_users=data.get('arrear_users', 0), arrear_price=data.get('total_price', 0))
+                            res = obj.update_billing_history(arrear_users=data.get('arrear_users', 0),
+                                                             arrear_price=data.get('total_price', 0))
                             price = res.get('total_cost', 0) + obj.contract_rate
                             obj.previous_cycle_user = res.get('new_users', obj.previous_cycle_user)
                         else:
@@ -729,11 +741,12 @@ class SaasContract(models.Model):
                     _logger.info("--------Exception-While-Creating-Invoice-------%r", e)
                     raise UserError("Exception While Creating Invoice: {}".format(e))
                 else:
-                    old_date = obj.next_invoice_date and fields.Date.from_string(obj.next_invoice_date) or fields.Date.from_string(fields.Date.today())
+                    old_date = obj.next_invoice_date and fields.Date.from_string(
+                        obj.next_invoice_date) or fields.Date.from_string(fields.Date.today())
                     if first_invoice == True:
-                        relative_delta = relativedelta(months=(self.recurring_interval*self.total_cycles))
+                        relative_delta = relativedelta(months=(self.recurring_interval * self.total_cycles))
                         obj.remaining_cycles = 0
-                    else:    
+                    else:
                         relative_delta = relativedelta(months=self.recurring_interval)
                         obj.remaining_cycles -= 1
                     next_date = fields.Date.to_string(old_date + relative_delta)
@@ -751,17 +764,18 @@ class SaasContract(models.Model):
     def send_credential_email(self):
         self.ensure_one()
         if not self.saas_client.client_url:
-            raise UserError("SaaS Instance Not Found! Please create it from the associated client record for sharing the credentials.")
+            raise UserError(
+                "SaaS Instance Not Found! Please create it from the associated client record for sharing the credentials.")
         template = self.on_create_email_template
         compose_form = self.env.ref('mail.email_compose_message_wizard_form')
-
 
         if self.plan_id.use_specific_user_template:
             try:
                 token = generate_token()
                 self.sudo().set_user_data(token=token)
                 self._cr.commit()
-                reset_pwd_url = "{}/web/signup?token={}&db={}".format(self.saas_client.client_url, token, self.saas_client.database_name)
+                reset_pwd_url = "{}/web/signup?token={}&db={}".format(self.saas_client.client_url, token,
+                                                                      self.saas_client.database_name)
                 self.saas_client.invitation_url = reset_pwd_url
             except Exception as e:
                 _logger.info("--------EXCEPTION-WHILE-UPDATING-DATA-AND-SENDING-INVITE-------%r----", e)
@@ -787,7 +801,9 @@ class SaasContract(models.Model):
 
     @api.model
     def create_recurring_invoice(self):
-        valid_contracts = self.search([('remaining_cycles', '>', 0), ('state', '=', 'confirm'), ('next_invoice_date', '<=', fields.Date.today()), ('auto_create_invoice', '=', True)])
+        valid_contracts = self.search(
+            [('remaining_cycles', '>', 0), ('state', '=', 'confirm'), ('next_invoice_date', '<=', fields.Date.today()),
+             ('auto_create_invoice', '=', True)])
         _logger.info("--------RECURRING-INVOICE-CRON--------%r", valid_contracts)
 
         for contract in valid_contracts:
@@ -796,10 +812,10 @@ class SaasContract(models.Model):
     @api.model
     def create(self, vals):
         vals['name'] = self.env['ir.sequence'].next_by_code('saas.contract')
-        res = super(SaasContract,self).create(vals)
+        res = super(SaasContract, self).create(vals)
         res.message_subscribe(partner_ids=[res.partner_id.id])
         return res
-    
+
     @api.model
     def hold_contract(self):
         for obj in self:
@@ -814,14 +830,13 @@ class SaasContract(models.Model):
                 if obj.saas_client and obj.saas_client.state == 'stopped':
                     obj.saas_client.start_client()
 
-
     def inactive_client(self):
         for obj in self:
             if obj.state == 'inactive' and obj.saas_client:
                 if obj.saas_client.state == 'started':
                     obj.saas_client.stop_client()
                 obj.saas_client.state = 'inactive'
-    
+
     def unlink(self):
         for obj in self:
             if obj.saas_client:
