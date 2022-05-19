@@ -616,6 +616,7 @@ class SaasContract(models.Model):
                             client_id.invitation_url = reset_pwd_url
                             # template = obj.on_create_email_template
                             template_id = self.env.ref('odoo_saas_kit.client_credentials_template')
+                            _logger.info("Template %r", template_id)
                             mail_id = template_id.send_mail(client_id.id)
                             # current_mail = self.env['mail.mail'].browse(mail_id)
                             # res = current_mail.send(raise_exception=False)
